@@ -114,8 +114,8 @@ The dotted arrow signals "this only happens sometimes" without needing a paragra
 **Cost-aware routing**:
 ```
 router{LLM router}
-router -->|fast / cheap| haiku[Small model]
-router -->|slow / accurate| sonnet[Large model]
+router -->|fast / cheap| small[Small model]
+router -->|slow / accurate| large[Large model]
 ```
 
 ## Cross-cutting concerns on edges, not as nodes
