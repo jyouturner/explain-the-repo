@@ -1,8 +1,8 @@
-# Design pass — picking the diagram set
+# Diagram-set design pass — picking the set within a doc section
 
-The skill produces a **diagram set**, not a single diagram. This file is the procedure for deciding what's in the set before any drawing begins. The default set size is 1; you add diagrams when the system has properties that genuinely don't fit one frame.
+The diagram procedure produces a **diagram set** for a section, not a single diagram. This file is the procedure for deciding what's in the set before any drawing begins. The default set size is 1; you add diagrams when the system aspect being illustrated has properties that genuinely don't fit one frame.
 
-This is step 0 of `SKILL.md`'s procedure — runs before steps 1–6, which then run *per diagram in the set*.
+This is step 0 of `references/diagram-procedure.md` — the inner diagram loop. Runs before steps 1–6 of that procedure, which then run *per diagram in the set*. Distinct from the doc-level design pass (`references/doc-design-pass.md`), which decides which doc *sections* exist.
 
 ---
 
@@ -95,4 +95,4 @@ You have:
 
 For each diagram in the set, run steps 1–6 of the main procedure. Step 1 ("pick the diagram's job") is now narrowed by the set design — the archetype is fixed; step 1 confirms the specific job.
 
-The set design itself is reviewed by a separate subagent — see `references/design-panel-prompt.md`. That review runs only when N > 1 (single-diagram sets don't need a set-level critique; the existing diagram-panel covers them).
+The set design itself is reviewed by a separate subagent — see `references/diagram-set-panel-prompt.md`. That review runs only when N > 1 (single-diagram sets don't need a set-level critique; the existing diagram-panel covers them).

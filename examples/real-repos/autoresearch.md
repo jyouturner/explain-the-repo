@@ -1,41 +1,42 @@
-# autoresearch — AI agent for cloud-cost optimization (multi-diagram set)
+# autoresearch — architecture
 
-A worked example of the skill applied to a Python AI agent that runs a 5-phase cloud-cost optimization pipeline, orchestrates Copilot CLI subprocesses for the LLM-driven phases, and has both intra-run refinement and cross-run learning loops.
+A worked example of `explain_the_repo` applied to `~/Github/autoresearch`, a Python AI agent for cloud-cost optimization. Produced under the doc design pass with a 5-section plan and a 4-diagram architecture overview. This file is the full output the skill returns.
 
-This is the **multi-diagram** version. An earlier single-diagram version of this example (preserved in git history at commit `89335a5`) ended up at 21 nodes — hard-fail noun-inventory band — because that's what the system honestly needs in one frame. The fix wasn't to consolidate; it was to recognize that the system warrants a *set* of diagrams. Step 0 of `SKILL.md` now decides set composition before any Mermaid is generated; this example shows what the multi-diagram output looks like end-to-end.
-
-## Design summary
-
-Four-diagram set covering the autoresearch system:
-
-1. **[headline] Request trace** — one run end-to-end through the 5-phase pipeline with the intra-run refinement loop visible. The Phase 2 deep dive appears as a single node (`p2`) that diagram 2 zooms.
-2. **[zoom of diagram 1's `p2` node] Phase 2 deep dive** — the orchestrated-vs-single-call dispatch, decision diamond → discover/triage/specialist on the orchestrated branch, single-call driver on the other.
-3. **[cadence sibling to diagram 1] Cross-run feedback loop** — runs across runs (days to weeks). User verdicts on stories → FeedbackRegistry → LearningEngine → ExceptionRegistry / prompt calibration → next run's deep-dive prompts.
-4. **[topology sibling] Persistent state map** — what state persists between runs and who reads / writes it. Per-project, cross-project, per-run scopes.
-
-Aspects deliberately out of the set, mentioned in individual diagram NOTES rather than drawn:
-
-- Dashboard event stream (every phase emits events; observability concern, sibling on its own).
-- Hard failure paths (budget exhaustion abort, validation retry escalation) — would be a 5th sibling but doesn't earn it under the cap.
-- BehavioralVerdictSynthesizer (passive watcher of dashboard dismissals / stale findings / cost snapshots) — folded into diagram 3's NOTES.
-- Parallel specialist mode (concurrency variant of diagram 2) — folded into diagram 2's NOTES.
-
-## Design-panel summary
-
-Design-panel revised one issue: `unanchored-zoom` on diagram 2 — the initial set design described diagram 2 as zooming "Phase 2 deep dive" but didn't explicitly name a `Phase 2 deep dive` node in the headline scope. Fixed by renaming the headline's `p2` node to `p2[Phase 2 deep dive · dispatch per service]` so the zoom anchor is unambiguous.
+The user request: *"Explain the autoresearch repo — give me an architecture doc I can hand to a new engineer."*
 
 ---
 
-## Diagram 1 — Request trace (headline)
+# autoresearch — architecture
 
-### Plan
+autoresearch is a Python AI agent that runs a 5-phase cloud-cost optimization pipeline. Each request walks a project's services through scripted discovery, LLM-driven deep-dive analysis, source-code grounding, JIRA story generation, and a hybrid programmatic-plus-LLM evaluation. The architecturally interesting property is the split between an in-process Python orchestrator and a sandboxed Copilot CLI subprocess that owns all LLM-driven reasoning — the orchestrator never calls an LLM API directly.
 
-- **Concrete entry point.** `cost_optimizer_agent.py --service "BigQuery,Dataflow" --project my-proj-prod --max-rounds 2 --budget 10`. Service mode, prior-run state in `FindingRegistry`.
-- **Ordered path.** CLI → preflight (verifies prior open findings against current state, scripted gcloud, $0) → service-mode bootstrap (skips Phase 1, synthesizes cost summary) → Phase 2 deep dive (one node here; zoomed in diagram 2) → Phase 3 source analysis → Phase 4 stories → Phase 5 evaluation → score → refinement decision → merge → return. Refinement loop edge: `refine -->|no| p2`.
-- **Semantic axis.** Trust / execution boundary — Python orchestrator (in-process) vs Copilot CLI subprocess (sandboxed), with external cloud APIs and per-project persistent state as adjacent stores.
-- **Out of scope** (covered by sibling diagrams or NOTES). Phase 2 internals (diagram 2). Cross-run feedback (diagram 3). Persistent state details (diagram 4 — shown here as a single cylinder). Dashboard internals. Hard failure paths.
+## Where to start reading
 
-### Mermaid source
+- **`cost_optimizer_agent.py`** — CLI entry point; `CostOptimizerAgent.run()` is the orchestrator's main loop. Start here to follow a single run end-to-end.
+- **`pipeline.py`** — defines the FindingPipeline gates (`hypothesis → investigated → evidenced → story_ready`); read this before reading any of the per-phase modules.
+- **`executors.py`** — wraps Copilot CLI invocations. Every LLM-driven step in any phase ultimately calls a function here.
+- **`team_config.yaml`** — declares which services have orchestrated discovery scripts (vs single-call investigation). The orchestrated-vs-single-call decision in Phase 2 is driven by entries in this file.
+- **`registries.py`** — defines `FindingRegistry`, `ExceptionRegistry`, `FeedbackRegistry`. State persisted across runs lives in their backing JSONL files; the structure of cross-run learning is best understood by reading these classes.
+- **`cost_optimizer_agent.md`** (in the repo) — design intent doc the agent's authors wrote. Worth skimming for "why" questions; this architecture doc focuses on "what" and "how."
+
+## Architecture overview
+
+The system warrants a 4-diagram set rather than a single diagram. The diagram-set design pass produced:
+
+- **[headline]** Request trace — one run end-to-end through the 5 phases with the intra-run refinement loop.
+- **[zoom of headline's `p2` node]** Phase 2 deep dive — the orchestrated-vs-single-call dispatch.
+- **[cadence sibling]** Cross-run feedback — runs across runs (days to weeks); user verdicts → LearningEngine → next-run calibration.
+- **[topology sibling]** Persistent state map — what state persists between runs, scoped per-project / cross-project / per-run.
+
+Aspects deliberately out of the diagram set, mentioned in NOTES on individual diagrams: dashboard event stream, hard failure paths, BehavioralVerdictSynthesizer, parallel specialist mode.
+
+The diagram-set design pass returned `unanchored-zoom` once (the headline didn't explicitly name a `Phase 2 deep dive` node); fixed by relabeling `p2` before generation. All four diagrams shipped panel-clean afterward (syntax linter all clear, panel critiques returned ship across both parallel runs per diagram).
+
+### Diagram 1 — Request trace
+
+One run end-to-end. CLI invocation → preflight verify → service-mode bootstrap → Phase 2 deep dive (zoomed in Diagram 2) → Phase 3 source analysis → Phase 4 stories → Phase 5 evaluation → score → refinement decision → merge → return.
+
+Concrete entry point: `cost_optimizer_agent.py --service "BigQuery,Dataflow" --project my-proj-prod --max-rounds 2 --budget 10`. Service mode, prior-run state in `FindingRegistry`.
 
 ```mermaid
 flowchart LR
@@ -95,32 +96,13 @@ flowchart LR
   style LLM  fill:#FAEEDA22,stroke:#854F0B
 ```
 
-### Notes
+Trust axis: ORCH (in-process Python) vs LLM (Copilot CLI subprocess, sandboxed). The split is the system's load-bearing design property — only the LLM-driven phases (`p3`, `p4`, `p5`) cross into the subprocess; the orchestrator and Phase 2 dispatch live in-process. The refinement loop is drawn as `refine{}` decision diamond with an explicit back-edge to `p2`.
 
-- **Phase 2 internals** are in diagram 2 — `p2[Phase 2 deep dive · dispatch per service]` is a single node here; the zoom diagram explodes it.
-- **Cross-run feedback** is in diagram 3 (different cadence — across runs, days to weeks).
-- **Persistent state landscape** is in diagram 4. This headline shows persistent state as one cylinder so the trust axis stays the focus.
-- **Dashboard event stream** is intentionally out of scope; mentioned here only because every orchestrator phase emits events to it.
-- **Architectural choices surfaced visually.** Refinement loop as `refine{}` decision diamond with explicit back-edge to `p2`. Trust crossing on the Phase 3-5 LLM phases (`<-->` to cloud labeled "sandboxed"). Service-mode bootstrap as its own node so the no-CSV path is visible.
-- **Renderer config.** `flowchart LR`, elk renderer (`defaultRenderer: 'elk'`, `curve: 'basis'`, `nodeSpacing: 50`, `rankSpacing: 60`).
+### Diagram 2 — Phase 2 deep dive (zoom of `p2`)
 
-### Panel summary
+Zooms the `p2` node from Diagram 1. Shows the orchestrated-vs-single-call dispatch within Phase 2.
 
-Panel clean on structure (return arrow exists, single sync cadence, no out-of-scope sprawl, trust-axis honest with ORCH and LLM cleanly separated). One borderline issue surfaced: `noun-inventory` at 13 nodes (soft band — driven by the load-bearing 5-phase split and the refinement loop's decision diamond; consolidating would bury the architectural choices the design pass already split out into siblings).
-
----
-
-## Diagram 2 — Phase 2 deep dive (zoom)
-
-### Plan
-
-- **Zooms** diagram 1's `p2` node.
-- **Concrete entry point.** A single Phase 2 deep dive on `services = ["BigQuery", "Dataflow"]` arriving from `boot` or from the refinement loop. BigQuery has a discovery script registered in `team_config.yaml`; Dataflow does not. The diagram traces both services through the dispatch.
-- **Ordered path.** Entry → `skills{Skill has discovery script?}` → orchestrated branch (`discover.py` runs scripted gcloud, $0; `triage.py` applies deterministic rules; `spec` driver invokes per-entity Copilot CLI prompts) OR single-call branch (`single` driver invokes one Copilot CLI investigation prompt). Both branches converge to `out → FindingPipeline` (back to diagram 1).
-- **Semantic axis.** Same trust / execution axis as the headline — Python orchestrator (the drivers and scripted scanners are in-process) vs Copilot CLI subprocess (the LLM-driven investigation prompts).
-- **Out of scope** (mentioned in NOTES). Parallel specialist mode (concurrency variant of `spec`). Cost capping logic. Specialist tool invocations beyond gcloud.
-
-### Mermaid source
+Concrete entry point: a single Phase 2 invocation on `services = ["BigQuery", "Dataflow"]` arriving from `boot` or the refinement loop. BigQuery has a discovery script registered in `team_config.yaml`; Dataflow does not. The diagram traces both services through the dispatch.
 
 ```mermaid
 flowchart LR
@@ -175,31 +157,13 @@ flowchart LR
   style LLM  fill:#FAEEDA22,stroke:#854F0B
 ```
 
-### Notes
+The orchestrated branch costs $0 in scripted stages (`discover`, `triage`); only the per-entity specialist prompts hit the LLM. The single-call branch is one investigation prompt per service. This dispatch is the system's central efficiency move and is configured per-skill in `team_config.yaml`.
 
-- **Anchored to diagram 1** via the `p2` node — the `in` and `out` actors at the boundary represent the entry from `boot` / refine-loop and the exit back to the FindingPipeline that diagram 1 shows in full.
-- **The `discover.py` / `triage.py` stages cost $0** — scripted gcloud calls and deterministic rules. Only the per-entity / single-call investigation prompts hit the LLM. This is the architectural efficiency the dispatch is designed around.
-- **Trust crossing.** The `spec` and `single` drivers live in ORCH (Python). They invoke Copilot CLI as subprocesses; the LLM-driven prompts (`spec_prompt`, `single_prompt`) are conceptually inside the subprocess. The `<-->` edges labeled "per-entity tools" / "investigation tools" make the subprocess crossing visible.
-- **Out of scope.** Parallel specialist mode runs N specialists concurrently for high-entity-count services; would be a sibling that splits this `spec → spec_prompt` step into a fan-out. Not drawn here.
-- **Renderer config.** `flowchart LR`, elk renderer. Standard config.
+### Diagram 3 — Cross-run feedback loop (cadence sibling)
 
-### Panel summary
+Different cadence: across runs, days to weeks. The slow loop that calibrates the agent over time.
 
-Panel clean. Trace closes on both branches (back to FindingPipeline via `out`); decision diamond is the architectural choice drawn structurally; trust axis aligned with the headline. No borderline issues at 9 nodes.
-
----
-
-## Diagram 3 — Cross-run feedback loop (cadence sibling)
-
-### Plan
-
-- **Cadence.** Across runs — typically days to weeks between cycles. This is the slow loop that calibrates the agent over time.
-- **Concrete entry point.** A user reviewing `outputs/run-42/stories/*.md` files at the end of a run. Each story has a `## Feedback` table with rows like `Verdict: accepted | false_positive | deferred`. The user fills 3 verdicts (2 accepted, 1 FP).
-- **Ordered path.** Prior run produces stories → user marks verdicts → FeedbackRegistry records the verdict log → LearningEngine processes (typically batched) → ExceptionRegistry gets new suppressions, prompt calibration weights update → next run reads both at deep-dive time.
-- **Semantic axis.** Cadence boundary — within-run reads/writes are dotted (the prior run wrote stories; the next run reads calibration); the across-runs human-driven chain is solid.
-- **Out of scope** (NOTES). The in-run flow itself (diagram 1). BehavioralVerdictSynthesizer (passive watcher; mentioned in NOTES below).
-
-### Mermaid source
+Concrete entry point: a user reviewing `outputs/run-42/stories/*.md`. They edit each story's `## Feedback` table — verdicts like `accepted`, `false_positive`, `deferred` — and commit. LearningEngine processes the verdicts (typically batched), updates `ExceptionRegistry` (suppressions) and prompt-calibration weights, and the next run reads both at deep-dive time.
 
 ```mermaid
 flowchart LR
@@ -234,29 +198,11 @@ flowchart LR
   style FEEDBACK fill:#EAE4F222,stroke:#5B3A8C
 ```
 
-### Notes
+A second feedback channel — `BehavioralVerdictSynthesizer` — watches dashboard dismissals, stale findings, and cost snapshots, feeding the same `learning` step. Not drawn separately because it would be a 3-node sibling; mentioned here for completeness.
 
-- **Cadence sibling to diagram 1.** Diagram 1 is one run; this diagram spans across runs. The dotted edges at the boundary represent within-run reads/writes the run instance does at its respective phases.
-- **BehavioralVerdictSynthesizer.** A parallel feedback channel runs independently of explicit user verdicts — it watches dashboard dismissals (user closing finding cards), stale findings (no action after N runs), and cost snapshots that confirm or refute predicted savings. Its outputs feed the same `learning` step. Not drawn separately because at 3 nodes it would belong in NOTES under the design-pass rules; mentioned here for completeness.
-- **Architectural choices surfaced visually.** The split between human-marked verdicts (solid chain through FeedbackRegistry → LearningEngine) and the behavioral / passive channel (NOTES) is deliberate — the explicit verdict path is the contract; the behavioral channel is best-effort.
-- **Renderer config.** `flowchart LR`, elk renderer. Standard config.
+### Diagram 4 — Persistent state map (topology sibling)
 
-### Panel summary
-
-Panel clean. Cadence is named explicitly in the plan and visible in the diagram via the actor split (prior_run / user / next_run); no in-run flow leaked into this frame; FeedbackRegistry and ExceptionRegistry as cylinders correctly distinguish stores from processing nodes. No borderline issues at 7 nodes.
-
----
-
-## Diagram 4 — Persistent state map (topology sibling)
-
-### Plan
-
-- **Archetype.** Topology, not a trace. Answers "what state persists between runs and who reads / writes it." A run instance is the actor; the stores are the components.
-- **Representative element.** The set of stores a run touches at preflight (read) and merge (write) time — and in between for source-analysis (clone), deep-dive (read calibration / suppressions), and story-output (write stories, append delta report).
-- **Semantic axis.** Scope — per-project (FindingRegistry, ExceptionRegistry, FeedbackRegistry) vs cross-project (shared repos cache, LearningEngine state) vs per-run (outputs/run-N).
-- **Out of scope.** In-memory state during a run. Lock files / coordination primitives. The dashboard event stream (different concern: ephemeral observability, not persistent state).
-
-### Mermaid source
+Topology, not trace. Answers "what state persists between runs and who reads / writes it." Semantic axis is scope: per-project, cross-project, per-run.
 
 ```mermaid
 flowchart LR
@@ -300,26 +246,46 @@ flowchart LR
   style PERRUN      fill:#EAE4F222,stroke:#5B3A8C
 ```
 
-### Notes
+The single `run` actor is a placeholder for any run instance touching these stores. Reads dotted, writes solid. The `FeedbackRegistry` write is human-mediated (the reviewing user, after the run completes); the run itself doesn't write verdicts.
 
-- **Topology, not trace.** The `run` actor is a placeholder for any run instance touching these stores. There's no implied request flow — this diagram is the static state landscape that diagrams 1 and 3 reference.
-- **Reads dotted, writes solid.** The convention here matches the headline's side-channel reads.
-- **LearningEngine state is shown here as a store.** The processing that updates it (verdict-driven) is in diagram 3.
-- **FeedbackRegistry write is human-mediated.** The run itself doesn't write verdicts; the reviewing user does, after the run completes. Captured as the long edge at the bottom.
-- **Renderer config.** `flowchart LR`, elk renderer. Standard config.
+## Component summaries
 
-### Panel summary
+The orchestrator is split into discrete responsibilities. Each component is a class or module in the repo.
 
-Panel clean. Topology archetype correctly named in the plan; storage components drawn as cylinders; per-project / cross-project / per-run scope axis visible in the three subgraphs. No borderline issues at 7 nodes.
+- **`CostOptimizerAgent` (`cost_optimizer_agent.py`).** The top-level orchestrator. Owns the run loop, dispatches between phases, applies the refinement decision. Does NOT itself invoke any LLM — all LLM work is delegated to `executors`. Read this to understand the run-level control flow.
 
----
+- **`FindingPipeline` (`pipeline.py`).** State machine for findings. A finding moves through gates `hypothesis → investigated → evidenced → story_ready`; only `story_ready` findings reach Phase 4. Implements deduplication against `ExceptionRegistry` and threshold-based dropping. The pipeline is where business logic about "what counts as a real finding" lives.
 
-## Set-level closing notes
+- **`Executors` (`executors.py`).** Wrappers for Copilot CLI subprocess invocations. Every Phase 2 specialist call, Phase 3 source analysis, Phase 4 story generation, and Phase 5 evaluation routes through here. The `executors` module is the *only* place LLM calls happen — the trust boundary between in-process Python and the sandboxed subprocess is enforced by routing all reasoning through this module.
 
-Aspects flagged as out-of-set candidates the user could ask for as follow-up diagrams:
+- **`Registries` (`registries.py`).** Persistent state. `FindingRegistry` (open findings, hash-chained for tamper-evidence), `ExceptionRegistry` (verdict-driven suppressions), `FeedbackRegistry` (verdict log). All three are JSONL-backed, per-project. Cross-run learning state lives in `LearningEngine` (separate module) and feeds back into `ExceptionRegistry` over time.
 
-- **Hard failure paths** (budget exhaustion abort, validation retry escalation) — would be a fifth sibling, archetype "failure / recovery." The 3-attempt retry escalation in particular is structurally distinct from the refinement loop in diagram 1.
-- **Dashboard observability** — every orchestrator phase emits events to a dashboard sidecar. A separate observability diagram could be drawn if the dashboard's behavior is the subject.
-- **Parallel specialist mode** — concurrency variant of the orchestrated `spec → spec_prompt` step in diagram 2. Mentioned in diagram 2 NOTES; would warrant its own sibling if the user is investigating concurrency.
+- **`Skills` (`skills/`).** Per-service discovery and triage scripts. `team_config.yaml` lists which services have skills; for each, the skills directory contains `discover.py` and `triage.py`. Services without skills fall through to single-call investigation. Adding a new orchestrated service is a matter of writing two short scripts and one config entry.
 
-Each of these earns its own diagram only if the user is asking specifically about that aspect; the four-diagram set covers the load-bearing structure for the typical "how does this system work" request.
+- **`Dashboard` (`dashboard/`).** A FastAPI sidecar that consumes the agent's event stream. Out of scope for this doc — see the dashboard's own README.
+
+## Out of scope
+
+- **Hard failure paths** (budget exhaustion abort, validation retry escalation with 3-attempt prompt rewrite). Documented inline in `cost_optimizer_agent.py` as `# FAILURE PATH:` comments; would warrant its own doc section if operations focus is needed.
+- **Parallel specialist mode.** Concurrency variant of Diagram 2's `spec → spec_prompt` step that runs N specialists in parallel for high-entity-count services. See `cost_optimizer_agent.py:run_parallel_specialists()`.
+- **Dashboard internals.** A separate FastAPI service with its own architecture; see `dashboard/README.md`.
+- **Run-companion (`run_companion.py`).** Wrapper for cleanup and cleanup-time logging. Not part of the run-time architecture; see the script's docstring.
+- **Eval suite (`tests/`).** Project-internal evaluation framework; see `tests/README.md` if any.
+
+<details>
+<summary>Generation notes</summary>
+
+Doc plan: 5 sections (Headline, Where to start reading, Architecture overview, Component summaries, Out of scope). Doc-panel critique skipped (3 substantive sections + headline + out-of-scope wrapper; under the >3-sections threshold for doc-panel).
+
+Architecture overview's diagram set: 4 diagrams (request trace headline + Phase 2 zoom + cross-run cadence sibling + state topology sibling). Diagram-set design panel revised one issue (`unanchored-zoom` on Diagram 2; fixed by labeling `p2[Phase 2 deep dive]` in the headline). All four diagrams shipped panel-clean across two parallel runs each. Syntax linter all clear on all four.
+
+Per-section panels:
+- Headline: prose, no panel (prose-only section).
+- Where to start reading: prose with file pointers; not panel-reviewed (file pointers either resolve or don't).
+- Architecture overview: 4-diagram set, panel-clean.
+- Component summaries: prose grounded in named files; not panel-reviewed.
+- Out of scope: prose, no panel.
+
+Total subagent calls: 1 (diagram-set panel) + 8 (4 × 2 panel critiques) + 4 (4 × syntax linter) = 13 critique calls. Doc-level panel skipped per the 3-or-fewer-substantive-section rule.
+
+</details>

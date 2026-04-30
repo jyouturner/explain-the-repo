@@ -1,8 +1,10 @@
-# Walkthrough — applying the procedure to a multi-tenant RAG service
+# Walkthrough — the inner diagram procedure on a multi-tenant RAG service
 
-A complete walkthrough of the skill's procedure, from initial prompt to final Mermaid source. The example is a generic multi-tenant retrieval-augmented generation service — a public-domain reference architecture with no proprietary content.
+A complete walkthrough of the **inner diagram procedure** in `references/diagram-procedure.md` — the steps that run when the `explain_the_repo` skill (or a standalone "draw a diagram of X" request) needs to produce a Mermaid diagram set. The example is a generic multi-tenant retrieval-augmented generation service — a public-domain reference architecture with no proprietary content.
 
-This walkthrough exercises a **single-diagram set (N=1)**. For a multi-diagram example, see [`real-repos/autoresearch.md`](real-repos/autoresearch.md), which shows step 0 producing a 4-diagram set for a system that genuinely needs siblings.
+This walkthrough exercises a **single-diagram set (N=1)** within the inner procedure. The full architecture-doc skill (with the doc design pass deciding *which sections* a doc needs, and per-section generation that invokes this inner procedure for diagram sections) is walked through more fully in the [`real-repos/`](real-repos/) examples — see [`real-repos/autoresearch.md`](real-repos/autoresearch.md) for a multi-diagram-set case and [`real-repos/graphql-node.md`](real-repos/graphql-node.md) for a single-diagram architecture doc.
+
+In the original skill (before the `explain_the_repo` rename), this walkthrough was the canonical walk-through. It still holds for the inner diagram procedure unchanged; the outer doc-level wrapping is what's new.
 
 ## The user prompt
 

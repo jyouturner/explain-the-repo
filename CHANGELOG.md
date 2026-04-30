@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-04-30
+
+### Renamed
+- **Skill: `system_diagram_in_mermaid` → `explain_the_repo`.** The work of v0.1–v0.3 made clear that users asking for a system diagram of a repo were actually asking for an *architecture document* containing diagrams, not diagrams alone. The diagram-set work, the multi-section format, the design-pass / panel-critique structure — all of it is shaped by the architecture-doc use case. v0.4 commits to that positioning. The repo URL stays at `system-diagram-in-mermaid` for now (rename is a follow-up).
+- **Skill description updated** to trigger on requests like "explain this repo," "architecture of [project]," "document this service," "onboard a new engineer to [codebase]" — in addition to the diagram-only triggers from earlier versions.
+
+### Added
+- **Outer doc-level skill (`SKILL.md`).** Two-level procedure. Phase A is a doc design pass that decides what *sections* the doc needs (headline, where-to-start, architecture overview, component summaries, lifecycle, data flow, state and persistence, glossary, out-of-scope). Phase B generates each section — prose sections get written and grounded in cited files; diagram-set sections invoke the inner diagram procedure. Phase C is a doc-level coherence review for docs with more than 3 sections.
+- **`references/diagram-procedure.md`** — the inner diagram procedure (steps 0–6 from the previous version's SKILL.md), now used by Phase B for diagram-set sections and usable standalone for diagram-only requests.
+- **`references/doc-design-pass.md`** — section taxonomy and decision rules for Phase A. Default doc shape is 3 sections (headline + architecture overview + where-to-start); add sections per documented rules; cap at 8–10.
+- **`references/doc-panel-prompt.md`** — doc-level coherence critique. Anchors include `missing-section`, `wrong-section-order`, `prose-diagram-mismatch`, `unanchored-pointers`, `not-grounded`, `where-to-start-missing-or-thin`, `no-out-of-scope-section`, `headline-overreaches`. Filter table partitions into revision-worthy and borderline.
+- **Doc-level opt-out:** signals like "quick overview", "no critique", "rough sketch", "skip the design pass" drop to a minimum 3-section shape and skip the doc-panel. Inner diagram procedure's syntax linter still runs.
+- **`examples/real-repos/` regenerated as full architecture docs.** The three real-repo examples (`autoresearch.md`, `recs-two-tower.md`, `graphql-node.md`) are now demonstrations of full architecture-doc output, not just diagrams. The autoresearch case shows a 5-section doc with a 4-diagram architecture overview; recs_two_tower shows a 5-section doc including a Lifecycle section; graphql-node shows a minimal 4-section doc with a single-diagram overview.
+
+### Renamed (file moves)
+- `references/design-pass.md` → `references/diagram-set-design-pass.md` (clearer distinction from the new doc-level design pass).
+- `references/design-panel-prompt.md` → `references/diagram-set-panel-prompt.md`.
+
+### Changed
+- `examples/walkthrough.md` reframed as a walkthrough of the **inner diagram procedure** (the steps inside `references/diagram-procedure.md`). The full doc-level walks now live in `examples/real-repos/`.
+- `evals/evals.json` bumped to 0.4.0, expanded to 8 prompts at two levels (doc-level and diagram-only). New evals: `explain-the-repo-architecture-doc` (multi-diagram doc), `explain-the-repo-simple-api` (minimal doc), `explain-the-repo-ml-system` (Lifecycle section warranted), `diagram-only-multi-cadence-agent` (inner-procedure-only multi-diagram), `explicit-opt-out` (quick overview path).
+- README rewritten for the new positioning; lineage section added documenting the rename.
+
+### Notes
+- The inner diagram procedure (everything in `references/diagram-procedure.md`) is unchanged from v0.3.0 — same step 0 through step 6, same panel rubric, same syntax linter, same opt-out semantics. The pivot is additive: the outer doc skill is new, the inner skill is preserved.
+- Open questions from v0.3.0 (subagent vs same-context, archetype tie-break, regenerate vs edit-in-place, etc.) remain resolved per their v0.3.0 dispositions; the doc-level skill inherits the same answers where applicable.
+- One genuinely new open question: how the doc design pass's "is this complex enough to need a Lifecycle / state-and-persistence / glossary section?" decision performs in real use. Empirical only.
+
 ## [0.3.0] — 2026-04-30
 
 ### Added

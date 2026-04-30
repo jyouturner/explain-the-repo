@@ -1,8 +1,8 @@
-# Design-panel critique prompt
+# Diagram-set panel critique prompt
 
-A self-contained prompt for critiquing a **diagram set design** (the output of step 0 / `references/design-pass.md`) before any Mermaid is generated. Paste this file as context, paste the set design beneath it, and Claude returns a JSON report on whether the set composition is sound.
+A self-contained prompt for critiquing a **diagram set design** (the output of step 0 of `references/diagram-procedure.md`, specified in `references/diagram-set-design-pass.md`) before any Mermaid is generated. Paste this file as context, paste the set design beneath it, and Claude returns a JSON report on whether the set composition is sound.
 
-This is distinct from `references/panel-prompt.md`, which critiques individual diagrams. The design-panel reviews the *set composition*: aspect coverage, cadence splits, zoom anchoring, fan-out vs the system's actual complexity. Used by step 0 of `SKILL.md` only when the set has more than one diagram (single-diagram sets don't need a set-level critique).
+This is distinct from `references/panel-prompt.md` (per-diagram critique) and `references/doc-panel-prompt.md` (doc-level critique). The diagram-set panel reviews the *set composition within a doc section*: aspect coverage, cadence splits, zoom anchoring, fan-out vs the system's actual complexity. Used by the inner diagram procedure only when the set has more than one diagram (single-diagram sets don't need a set-level critique).
 
 ---
 
