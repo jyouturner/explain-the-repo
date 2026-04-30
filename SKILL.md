@@ -105,7 +105,9 @@ The diagnostic mode is also useful when reviewing someone else's diagram without
 
 Before returning to the user, run a one-round panel critique on the diagram. This catches the subtler failure modes the procedure can let through — out-of-scope sprawl, trust-axis violations, buried architectural choices, plan-violation drift.
 
-Spawn a subagent that reads `references/panel-prompt.md` and applies the four-panelist critique procedure to your diagram. Independent context matters — do not run the panel in your own context, since you'll grade work you just authored.
+Spawn **two** subagents in parallel. Each reads `references/panel-prompt.md` and applies the four-panelist critique procedure to your diagram independently, in its own context. Independent context matters — do not run the panel in your own context, since you'll grade work you just authored.
+
+When both subagents return, **union their flagged issues**: collapse pairs that share both anchor and quoted span (one survives), keep all distinct issues. The unioned set is what feeds the partitioning step below. Two parallel runs catch stochastic flag drops — stage-1 evidence showed real issues catchable by one run can be missed by another with the same prompt against the same diagram. Wall-time cost is roughly one run (parallel); token cost roughly doubles for the panel step.
 
 Partition the panel's flagged issues into two buckets:
 

@@ -10,7 +10,7 @@ Add a new step 6 to the procedure (currently stops at step 5). Update the output
 
 ### New step 6 — Panel critique and one revision round
 
-> After producing the diagram (steps 1–5), run a one-round panel critique before returning to the user. Spawn a subagent that reads `references/panel-prompt.md` and `references/diagnostic-checklist.md` and applies the four-panelist procedure to the diagram you just produced. Independent context matters — do not run the panel in your own context, since you'll grade work you just authored.
+> After producing the diagram (steps 1–5), run a one-round panel critique before returning to the user. Spawn **two** subagents in parallel; each reads `references/panel-prompt.md` and `references/diagnostic-checklist.md` and applies the four-panelist procedure independently, in its own context. Independent context matters — do not run the panel in your own context, since you'll grade work you just authored. Union the flagged issues across both runs (collapse on identical anchor + quote; keep all distinct issues) before applying the filter.
 >
 > When the panel returns its JSON report, partition the issues into two buckets using the filter table below:
 >
@@ -74,15 +74,15 @@ Currently SKILL.md says return three things. New version returns four:
 
 Per skill invocation:
 
-| Path                      | Calls | Notes                                              |
-| ------------------------- | ----- | -------------------------------------------------- |
-| Today (no panel)          | 1     | Generator only.                                    |
-| Phase C, panel-clean      | 2     | Generator + panel critique (no revision needed).   |
-| Phase C, revision-worthy  | 3     | Generator + panel critique + one revision.         |
+| Path                      | Calls | Notes                                                              |
+| ------------------------- | ----- | ------------------------------------------------------------------ |
+| Today (no panel)          | 1     | Generator only.                                                    |
+| Phase C, panel-clean      | 3     | Generator + 2 parallel panel critiques (no revision needed).       |
+| Phase C, revision-worthy  | 4     | Generator + 2 parallel panel critiques + one revision.             |
 
-So 2–3× tokens vs today, every invocation. If most diagrams come back panel-clean (which the stage-1 evidence weakly supports — Trace Reader was silent on all 6), the average is closer to 2×.
+So 3–4× tokens vs today, every invocation. The two panel critiques run in parallel (see "Two-runs-unioned" under Post-ship adjustments below) — they catch stochastic flag drops at the cost of doubling the panel-step token spend.
 
-Latency adds the panel critique (which is small — single subagent, JSON output) plus optional revision. Estimated: +10–30 seconds per skill invocation depending on diagram size.
+Latency adds the panel critique (small — JSON output, two subagents in parallel so no sequential cost) plus optional revision. Estimated: +10–30 seconds per skill invocation depending on diagram size.
 
 ## What this commits us to
 
@@ -121,7 +121,21 @@ Ran phase C end-to-end against the three round-2 panel reports from stage 1: app
 **Other observations from the calibration:**
 
 - The borderline-vs-revision-worthy split worked as intended for everything except `noun-inventory`. Reviser correctly ignored borderline issues on all three cases.
-- One-round-bound is a real risk: a second panel pass would have caught the autoresearch regression. Phase C ships this risk by design (more rounds → cost + stochasticity), and the panel summary surfaced to the user is the partial mitigation. Worth carrying as an open question.
+- One-round-bound was a real risk: a second panel pass would have caught the autoresearch regression. Initially shipped as a known limitation; subsequently addressed by adopting two-runs-unioned (see Post-ship adjustments below). The single-revision bound on revision *itself* is unchanged.
+
+## Post-ship adjustments
+
+### Two-runs-unioned (adopted 2026-04-29)
+
+Step 6 now spawns two panel-critique subagents in parallel rather than one, and unions their flagged issues (by `(anchor, quoted span)`) before applying the filter table.
+
+**Motivation.** Stage-1 evidence and the calibration run both showed single panel runs are not authoritative — consecutive runs against the same diagram surface different subsets of issues (canonical case: the recs_two_tower offline-pipeline `out-of-scope-sprawl` flag, caught in round 1 but missed in round 2). A second pass would also have caught the autoresearch reviser regression that motivated the calibration's filter-table fix in the first place.
+
+**Cost.** Two parallel panel critiques double the panel-step tokens but add no wall-time (they run concurrently). Total cost moves from 2–3× → 3–4× the no-panel baseline; see updated cost table above.
+
+**Trade-off accepted.** Doubling token spend for stochasticity coverage is a real cost. The argument for default-on rather than opt-in: panel-clean is rare in practice (stage-1 saw only Trace Reader returning ship cleanly across all six runs; the other panelists found something almost every time), so the marginal cost of a second run is paid mostly when it actually adds coverage rather than just confirming a clean result.
+
+**Smaller question this introduces.** When the user provides `unknown` as the archetype hint and the two parallel runs classify it differently, which classification wins? Current handling: prefer whichever picked an SME persona that surfaced domain-specific issues; otherwise first-run. Not yet validated against real divergent-classification cases.
 
 ## Suggested next step
 

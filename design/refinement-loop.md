@@ -267,4 +267,6 @@ Stage 1 ran the hand-run plan above with one substitution — instead of running
 
 Stage 2 (slash command) is not blocked, just unscheduled. The hand-runnable `references/panel-prompt.md` is sufficient for opportunistic use — paste it into any Claude Code session with a diagram, get a JSON report, decide whether to revise. A slash command earns its keep when this workflow becomes routine enough to deserve a stable UX surface; until then, the hand-run path is fine and lets us keep iterating on the prompt without locking in a command shape prematurely.
 
-If/when stage 2 is taken up, the open questions in the section above (auto-revise vs report-only, regenerate vs edit-in-place, archetype detection) are still the right starting points. Add a fourth: should the slash command run the panel twice and union, given the stochasticity finding?
+If/when stage 2 is taken up, the open questions in the section above (auto-revise vs report-only, regenerate vs edit-in-place, archetype detection) are still the right starting points.
+
+**Update (2026-04-29):** Stage 2 was subsumed by phase C (see `design/integrated-flow-sketch.md`) — the panel is now part of the default skill flow rather than a separate slash command. The fourth question raised above ("should the panel run twice and union") was answered yes during phase-C tuning; SKILL.md step 6 now spawns two parallel critique subagents and unions their issues before applying the filter table.
