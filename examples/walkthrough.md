@@ -2,19 +2,31 @@
 
 A complete walkthrough of the skill's procedure, from initial prompt to final Mermaid source. The example is a generic multi-tenant retrieval-augmented generation service — a public-domain reference architecture with no proprietary content.
 
-## Step 0 — The prompt
+This walkthrough exercises a **single-diagram set (N=1)**. For a multi-diagram example, see [`real-repos/autoresearch.md`](real-repos/autoresearch.md), which shows step 0 producing a 4-diagram set for a system that genuinely needs siblings.
+
+## The user prompt
 
 > *"Draw a system diagram for a request flowing through a multi-tenant retrieval-augmented generation service. The platform has an API gateway that does PII redaction, a shared orchestrator with plan/execute/verify/adjust stages, an LLM router with cost tiers, retriever adapters that hit a tenant-scoped vector store, an eval harness, a feedback pipeline that updates a skill registry, and a per-tenant hash-chained audit log."*
 
-## Step 1 — Pick the diagram's job
+## Step 0 — Design pass
 
-The prompt describes a request flowing through the system, mentions specific components in roughly the order they're traversed, and names cross-cutting concerns (PII redaction, audit logging, multi-tenancy). This is a **request trace**, not a topology map.
+The system has multiple cadences (sync request flow + the cross-run feedback loop running at a different timescale) and a load-bearing internal structure (plan/execute/verify/adjust loop). The design pass weighs whether this needs a set:
 
-The prompt also mentions feedback (eval harness → feedback pipeline → skill registry), which is a *cross-cadence loop* running on a different timescale than the request. We'll mention it but draw it minimally — the request trace is the headline.
+- **Cross-run feedback** is a real cadence sibling candidate, but the feedback loop here is fairly thin (eval harness → feedback pipeline → skill registry) and can be drawn as a side-channel on the headline trace via dotted edges. Below the "would only have 3–4 nodes" threshold for a sibling.
+- **Plan/execute/verify/adjust loop** is structural but is the *core* of the headline trace, not a separable component to zoom.
+- **No persistent state to topology-diagram** beyond the audit log and the per-tenant vector store, both of which the trace touches.
 
-The prompt does not mention failure recovery, batch processes (e.g., nightly index rebuilds), or observability infrastructure. We won't add them.
+Conclusion: **N=1**, single-diagram set. Headline trace covers the request flow with the feedback loop as a side-channel. No design-panel critique needed (skipped for N=1).
 
-> "I'll draw this as a request trace — one client request flowing from the API gateway back to the API gateway. The cross-run feedback loop will appear as a side channel. Failure recovery and batch reindexing are out of scope; I'll mention them as candidates for sibling diagrams."
+> "I'll draw this as a single-diagram request trace — one client request flowing from the API gateway back to the API gateway. The cross-run feedback loop appears as a dotted side-channel rather than a sibling diagram. Failure recovery and batch reindexing are out of scope; I'll mention them as candidates for sibling diagrams if the user asks for those aspects."
+
+## Step 1 — Pick the diagram's specific job
+
+Step 0 assigned this diagram the trace archetype. Step 1 narrows to the specific instance: which request, from where to where.
+
+The prompt names cross-cutting concerns (PII redaction, audit logging, multi-tenancy) that should be on edges, not as peer boxes. The plan/execute/verify/adjust stages form a loop within the orchestrator that needs to be drawn as a real loop with the verify decision visible, not as a stack.
+
+> "Concrete entry point: a client request enters the API gateway, gets PII-redacted, flows through plan→execute→verify with retries via adjust on verify-fail, and exits via the gateway with a response. The cross-run feedback channel (eval harness → feedback pipeline → skill registry) is a dotted side-channel."
 
 ## Step 2 — Plan the trace in plain text
 
@@ -149,3 +161,17 @@ Three sibling diagrams could follow, each with its own cadence and scope:
 - **Multi-tenant isolation review** — the same components but drawn for a security audit, with every isolation control surfaced (KMS keys, network policies, encrypted-at-rest stores, tenant-scoped IAM). Different audience (compliance), same components, different emphasis.
 
 If a user asks for any of these, draw a separate diagram — don't try to add to this one.
+
+## Step 6 — Panel critique + syntax lint + bounded revision
+
+After the diagram is produced, three subagents run in parallel: two panel critics (each reading `references/panel-prompt.md` and applying the four-panelist procedure) and one syntax linter (reading `references/syntax-lint-prompt.md`). The diagram-level panel runs separately from step 0's design-panel; this is the per-diagram critique, not the set composition critique.
+
+For this single-diagram set with this trace, the panel summary would typically read:
+
+> *"Panel clean — Trace Reader, Visual Encoding Critic, Scope Steward, and the SME (Platform / SRE engineer) all returned ship. Syntax linter all clear."*
+
+Or with one borderline issue surfaced:
+
+> *"Panel clean on structure (return arrow exists, single sync cadence, trust-axis honest with three subgraphs cleanly separated). One borderline issue surfaced: `noun-inventory` at 12 nodes (right at the soft-band threshold — driven by the four-stage plan/execute/verify/adjust loop and the fan-out to LLM router tiers; consolidating would bury structural choices). Syntax linter all clear."*
+
+If the panel had flagged a revision-worthy issue (`out-of-scope-sprawl`, `wrong-trust-surface`, etc.), step 6 would regenerate the diagram once with the issue injected as an additional constraint into step 2's "Out of scope" list, then re-run only the syntax linter on the revised source. The revision is bounded to one round.

@@ -2,6 +2,8 @@
 
 A worked example of the skill applied to an AWS Lambda + Serverless Framework project that exposes a Data Gateway HTTP API in front of an in-process GraphQL engine. Clients call `/v0/query?queryId=...`, the gateway loads a persisted query template from disk, executes it against an Apollo schema, and resolvers fan out to upstream HTTP services.
 
+**Design summary (step 0):** N=1, single-diagram set. The system is a stateless request-response API with no separable cadences (no batch jobs, no cross-run feedback) and no load-bearing internal component complex enough to warrant a zoom sibling. The persistent-query store is small enough (one cylinder) that it lives inside the headline trace rather than getting its own topology sibling. No design-panel critique runs for N=1.
+
 The diagram exercises the **request-trace-no-trust-bounds** archetype with the Backend / API engineer SME persona — there's no real trust boundary in the codebase (single AWS account, all upstreams via plain HTTPS), so the semantic axis is deployment locality rather than security. Step 6 revised the original `others` node and its dotted `sibling traces` edge — the plan declared other queryIds out of scope, but the diagram drew them anyway. They're acknowledged in NOTES instead.
 
 ## Plan

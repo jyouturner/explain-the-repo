@@ -8,13 +8,18 @@ Status: experimental, v0.2. See [Limitations](#limitations) before depending on 
 
 The default failure mode for AI-generated system diagrams is the *noun inventory*: every component as a box, every relationship as an arrow, color used decoratively, layers stacked vertically as if hierarchy were the same as call order. The result reads like an org chart of the codebase, not like an explanation of what the system does.
 
-This skill replaces "draw boxes for every component you see" with a procedural loop:
+This skill replaces "draw boxes for every component you see" with a two-phase procedural loop:
 
-1. **Pick the diagram's job** — trace, topology, failure path, or cross-cadence loop. Don't mix them.
+**Phase A — Design pass (step 0).** Decide the *set* of diagrams the system needs. Default is 1; complex systems (multi-cadence agents, multi-loop pipelines, components with load-bearing internal structure) warrant 2–5 sibling diagrams (cadence siblings, zoom siblings, topology siblings, lifecycle siblings, failure siblings). When N > 1, a design-panel subagent reviews the set composition before any Mermaid is generated.
+
+**Phase B — Per-diagram generation (steps 1–6, run for each diagram in the set):**
+
+1. **Pick the diagram's specific job** — narrowed to a concrete entry point given the archetype assigned by step 0.
 2. **Plan the trace in plain text first** — concrete entry point, ordered path, semantic axis, out-of-scope fence.
 3. **Map to Mermaid primitives** — components on the path become nodes; semantic groups become subgraphs; cross-cutting concerns (auth, redaction, audit, rate limiting) become edge labels, not boxes.
 4. **Render with elk, not dagre** — elk minimizes edge crossings and handles subgraphs well.
-5. **If iterating on a messy diagram, diagnose first** — name the failure modes before redrawing.
+5. **If iterating on a messy diagram, diagnose first** — name the failure modes; under multi-diagram support, the redraw decision is a design-phase decision (often the original was sprawling because it should have been a set).
+6. **Panel critique + syntax lint + bounded revision** — step 6 spawns three subagents in parallel: two panel critiques (four-panelist semantic review, voted by union) and one syntax linter (parser-footgun scanner). Linter auto-fixes apply directly; panel issues partition into revision-worthy (auto-revise once) and borderline (surface in summary). The user can opt out of the panel critique with phrases like "quick diagram" / "no panel"; the syntax linter always runs.
 
 ## Before / after
 
@@ -147,10 +152,15 @@ ls ~/.claude/skills/system-diagram-in-mermaid/SKILL.md
 
 ## Files
 
-- [`SKILL.md`](SKILL.md) — the skill definition and procedure
+- [`SKILL.md`](SKILL.md) — the skill definition and procedure (step 0 + steps 1–6)
+- [`references/design-pass.md`](references/design-pass.md) — sibling rules and decision logic for step 0 (picking the diagram set)
+- [`references/design-panel-prompt.md`](references/design-panel-prompt.md) — set-level critique prompt, run when N > 1
+- [`references/panel-prompt.md`](references/panel-prompt.md) — four-panelist diagram-level critique used by step 6
+- [`references/syntax-lint-prompt.md`](references/syntax-lint-prompt.md) — parser-footgun checklist used by step 6's syntax linter
 - [`references/diagnostic-checklist.md`](references/diagnostic-checklist.md) — failure modes to identify before redrawing an existing diagram
 - [`references/mermaid-patterns.md`](references/mermaid-patterns.md) — Mermaid idioms (subgraphs, classDef, linkStyle, syntax footguns, standalone HTML render template)
-- [`examples/`](examples/) — worked examples and an anti-pattern catalog
+- [`design/`](design/) — design docs for the panel-critique loop (`refinement-loop.md`) and the integrated default flow (`integrated-flow-sketch.md`)
+- [`examples/`](examples/) — worked examples and an anti-pattern catalog (`real-repos/` shows the skill applied to actual codebases, including a multi-diagram set for `autoresearch`)
 - [`evals/evals.json`](evals/evals.json) — test prompts for evaluating the skill (see [Evaluation](#evaluation))
 
 ## When it triggers

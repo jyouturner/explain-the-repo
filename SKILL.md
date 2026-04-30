@@ -50,6 +50,8 @@ If N > 1, run the design-panel critique once on the set design itself: spawn a s
 
 If N = 1, skip the design-panel — the existing per-diagram panel critique (step 6) covers single-diagram cases.
 
+**Opt-out.** If the user signals they want the cheap path — phrases like "quick diagram", "just the source", "no panel", "no critique", "fast", "single diagram only", "skip the design phase" — drop to N=1 and skip the design-panel entirely. Proceed directly to steps 1–5 for the headline diagram. Step 6's syntax linter still runs (rendering correctness is non-negotiable; the linter is cheap), but step 6's panel critiques skip too. Mention in the panel-summary slot that you took the cheap path per user request, so the user knows what was skipped.
+
 After step 0 you have:
 - A set of N diagrams (1 ≤ N ≤ 5), each with archetype, scope, and concrete entry point.
 - Named relationships between diagrams in the set.
@@ -118,7 +120,7 @@ The direction matters. `flowchart LR` (left-to-right) reads naturally for reques
 
 ### 5. If iterating on an existing messy diagram
 
-When the user shows you a v1 / v2 diagram and says "make this better," don't just redraw — diagnose first. Read `references/diagnostic-checklist.md`, identify which specific failure modes the existing diagram exhibits, and tell the user which ones you're going to fix. Then go back to step 1.
+When the user shows you a v1 / v2 diagram and says "make this better," don't just redraw — diagnose first. Read `references/diagnostic-checklist.md`, identify which specific failure modes the existing diagram exhibits, and tell the user which ones you're going to fix. Then go back to step 0 (not step 1) — the redraw decision is itself a design-phase decision. If the original diagram is sprawling because it's trying to cover what should honestly be N siblings, propose a multi-diagram redraw rather than a "make this single diagram better" reply. The original failure modes (multiple cadences, noun inventory) are often *symptoms* of single-diagram overreach; the design pass is where that gets fixed.
 
 The diagnostic mode is also useful when reviewing someone else's diagram without redrawing.
 
@@ -137,6 +139,9 @@ When all three subagents return:
 
 1. **Apply linter auto-fixes first.** For each `auto_fixes` entry, replace the `find` text with `replace` verbatim in the Mermaid source. Surface any `manual_fixes` items in the panel summary (these need user attention — typically renames the linter can't safely apply alone).
 2. **Union the panel issues across the two panel runs**: collapse pairs that share both anchor and quoted span (one survives), keep all distinct issues. The unioned set is what feeds the partitioning step below. Two parallel runs catch stochastic flag drops — stage-1 evidence showed real issues catchable by one run can be missed by another with the same prompt against the same diagram. Wall-time cost is roughly one run (all three are parallel); token cost is roughly 2× one run for the panel step plus a small linter call.
+3. **Resolve archetype tie-breaks.** If the user provided `unknown` as the archetype hint and the two panel runs returned different classifications, prefer the run whose Domain SME persona surfaced concrete domain-specific issues; if both SMEs were silent or flagged similar issues, prefer the first run's classification. Note the tie-break (and which classification was chosen) in the panel summary.
+
+**Opt-out.** If the user opted out of the panel at step 0, run only the syntax linter — skip the two panel critique subagents and the bounded revision below. Surface "skipped panel critique per user request; syntax linter ran" in place of the panel summary.
 
 Partition the panel's flagged issues into two buckets:
 
@@ -152,7 +157,9 @@ Partition the panel's flagged issues into two buckets:
 
 **Borderline** (surface in the panel summary; do not revise): everything else, including `noun-inventory` (any band), `choices-buried`, `decorative-color`, `unlabeled-cross-boundary`, `inconsistent-edge-style`, `gates-invisible`, `wrong-stage-order`. The user is in a better position than a reviser to judge whether these warrant changes.
 
-If revision-worthy issues exist, revise the diagram once. The revision is **bounded to one round** — do not loop. When revising, do not consolidate or remove any node that the plan named as a load-bearing architectural choice, even to address a related anchor. Calibration found that count-driven or shape-driven consolidation tends to bury structural choices the plan called out as load-bearing — the plan's stated intent takes precedence.
+If revision-worthy issues exist, revise the diagram once. The revision is **bounded to one round** — do not loop. **Regenerate the diagram from step 2's planning step** with the panel issues injected as additional constraints in the plan's "Out of scope" list and step 3's mapping notes. Do not attempt to edit the prior Mermaid source in place — editing risks layering revisions on top of structural mistakes the panel just flagged. Regenerating with an adjusted plan is what calibration validated.
+
+When revising, do not consolidate or remove any node that the plan named as a load-bearing architectural choice, even to address a related anchor. Calibration found that count-driven or shape-driven consolidation tends to bury structural choices the plan called out as load-bearing — the plan's stated intent takes precedence.
 
 If every panelist returned `verdict: ship`, skip the revision and surface a one-line "panel clean" note in the panel summary.
 

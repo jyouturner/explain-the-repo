@@ -1,56 +1,67 @@
 {
   "skill_name": "system-diagram-in-mermaid",
-  "version": "0.2.0",
-  "notes": "Test prompts exercising different diagram archetypes. Each prompt has expectations for what the resulting diagram should and should not contain. These have not been run through a formal benchmark; they are seed cases for users running the skill-creator evaluation loop.",
+  "version": "0.3.0",
+  "notes": "Test prompts exercising different diagram archetypes plus the design phase (step 0) and the panel-critique flow (step 6). Each prompt has expectations for what the resulting response should and should not contain. Single-diagram prompts expect step 0 to conclude N=1; multi-diagram prompts expect step 0 to produce a 2-5 sibling set with a design-panel summary.",
   "evals": [
     {
       "id": 1,
       "name": "request-trace-multi-tenant-rag",
       "archetype": "request trace with trust boundaries",
+      "expected_set_size": 1,
       "prompt": "Draw a system diagram for a request flowing through a multi-tenant retrieval-augmented generation service. The platform has an API gateway that does PII redaction, a shared orchestrator with plan/execute/verify/adjust stages, an LLM router with cost tiers, retriever adapters that hit a tenant-scoped vector store, an eval harness, a feedback pipeline that updates a skill registry, and a per-tenant hash-chained audit log.",
       "expected_to_include": [
+        "Step 0 design summary concluding N=1 (the cross-run feedback loop is thin enough to draw as a side-channel rather than a sibling)",
         "A plan section in plain text before the Mermaid source",
         "Three subgraphs encoding trust boundary (tenant-scoped, shared platform, per-tenant storage)",
         "A single trace from the API client back to the API client",
         "Audit log as a single sink with multiple dotted incoming arrows",
         "PII redaction as an edge label, not a separate box",
-        "Plan-execute-verify-adjust loop drawn as a real loop (verify can return to plan via adjust)"
+        "Plan-execute-verify-adjust loop drawn as a real loop (verify can return to plan via adjust)",
+        "A panel summary at the end naming the four panelists and the syntax-linter result"
       ],
       "expected_to_exclude": [
         "Failure recovery / circuit breakers as peer flow",
         "Observability infrastructure as separate boxes",
         "More than one cadence (no batch jobs alongside the request trace)",
-        "Decorative color (every color must map to the named semantic axis)"
+        "Decorative color (every color must map to the named semantic axis)",
+        "Design-panel critique (skipped for N=1)"
       ]
     },
     {
       "id": 2,
       "name": "ci-cd-pipeline",
       "archetype": "request trace, no trust boundaries",
+      "expected_set_size": 1,
       "prompt": "Draw a diagram of how a pull request flows through a typical CI/CD pipeline: developer pushes to a feature branch, GitHub Actions runs lint and unit tests, on green the PR can be reviewed, after approval it merges to main, which triggers a build/push to a container registry, then ArgoCD detects the new image and deploys to staging, then a manual gate promotes to prod.",
       "expected_to_include": [
+        "Step 0 design summary concluding N=1",
         "Plan section naming the trace from developer push to prod deploy",
         "Linear flow with a clear branch for the manual gate to prod",
         "Stages as nodes, transitions as labeled edges",
-        "Some semantic distinction between automated stages and human-gated stages"
+        "Some semantic distinction between automated stages and human-gated stages",
+        "A panel summary at the end"
       ],
       "expected_to_exclude": [
         "Trust-boundary subgraphs (not the right axis here)",
         "Failure paths (test failures, deploy rollbacks) as peer flows",
         "Monitoring/alerting infrastructure",
-        "Inventory of every CI step or deploy-tool config detail"
+        "Inventory of every CI step or deploy-tool config detail",
+        "Design-panel critique (skipped for N=1)"
       ]
     },
     {
       "id": 3,
       "name": "iteration-mode-redraw",
       "archetype": "diagnostic mode on existing messy diagram",
+      "expected_set_size": "1 or N depending on whether the original was sprawling because it should be a multi-diagram set",
       "prompt": "Here's a diagram of our checkout flow [user attaches a screenshot or describes a layered diagram with 12+ boxes, decorative color, audit logging drawn as a peer service, and missing return arrows]. It's hard to follow — can you redraw it?",
       "expected_to_include": [
         "Diagnosis BEFORE redrawing: 3-4 named failure modes from the diagnostic checklist",
         "Explicit statement of which structural problem is most load-bearing",
-        "Plan section naming the trace before producing Mermaid",
-        "Redrawn diagram following the standard procedure"
+        "Step 0 design summary deciding whether the redraw should be a single diagram or a multi-diagram set (often the original is sprawling because it should be a set)",
+        "Plan section naming the trace before producing Mermaid (per diagram if N>1)",
+        "Redrawn diagram(s) following the standard procedure",
+        "A panel summary per diagram"
       ],
       "expected_to_exclude": [
         "Going straight to redraw without diagnosis",
@@ -62,6 +73,7 @@
       "id": 4,
       "name": "out-of-scope-erd",
       "archetype": "skill should NOT trigger / should redirect",
+      "expected_set_size": null,
       "prompt": "Draw me an ER diagram of user, post, and comment tables in a typical blog schema.",
       "expected_to_include": [
         "Recognition that this is an ERD, not a system architecture diagram",
@@ -71,25 +83,70 @@
       "expected_to_exclude": [
         "Forcing tables into a flowchart with subgraphs",
         "Encoding columns as edges or trust boundaries",
-        "Going through the trace-planning procedure for what is not a trace"
+        "Going through the trace-planning procedure for what is not a trace",
+        "Going through step 0's design pass (the skill should step aside before that)"
       ]
     },
     {
       "id": 5,
       "name": "ml-training-pipeline",
       "archetype": "cross-cadence loop, not a request trace",
+      "expected_set_size": 1,
       "prompt": "Draw a diagram of a typical ML training pipeline: a nightly job pulls labeled data from a data warehouse, a feature engineering step writes to a feature store, the trainer reads features and labels, runs distributed training on a GPU cluster, writes checkpoints to object storage, an eval job loads the checkpoint and runs a holdout suite, on pass the model gets registered in the model registry, and the serving infra picks up the new version.",
       "expected_to_include": [
+        "Step 0 design summary concluding N=1 (the pipeline is itself a single cross-cadence loop; no separable serving sibling within scope of the prompt)",
         "Recognition that this is a batch pipeline, not a request trace",
         "Plan section that names the cadence (nightly) explicitly",
         "Linear flow with a clear gate at the eval step",
-        "Storage components (warehouse, feature store, object storage, registry) drawn as cylinders or sinks"
+        "Storage components (warehouse, feature store, object storage, registry) drawn as cylinders or sinks",
+        "A panel summary at the end"
       ],
       "expected_to_exclude": [
         "Forcing a 'user' or 'request' entry point that doesn't exist in this pipeline",
         "Trust-boundary subgraphs (not the right axis)",
         "Real-time / synchronous serving path mixed in (different cadence)",
-        "Inventory of every dataset, model artifact, or job-runner detail"
+        "Inventory of every dataset, model artifact, or job-runner detail",
+        "Design-panel critique (skipped for N=1)"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "multi-cadence-agent",
+      "archetype": "system warranting a multi-diagram set",
+      "expected_set_size": "3-5",
+      "prompt": "Draw a system diagram for an AI agent that runs a multi-phase pipeline: each request triggers a deep-dive phase that branches between an orchestrated path (scripted discovery, deterministic triage, per-entity LLM calls) and a single-call path. After deep-dive comes source analysis, story generation, and evaluation. The agent has an intra-run refinement loop (low scores re-run weak phases) and a cross-run feedback loop (user verdicts on stories feed a learning engine that calibrates next-run prompts). State persists across runs in a finding registry, an exception registry, and a per-run outputs directory; repos are cached cross-project.",
+      "expected_to_include": [
+        "Step 0 design summary producing N>1 (most likely 3-5 diagrams)",
+        "A headline trace as one diagram in the set",
+        "A zoom sibling for the orchestrated-vs-single-call dispatch (load-bearing internal structure)",
+        "A cadence sibling for the cross-run feedback loop (different time scale)",
+        "Possibly a topology sibling for the persistent state landscape",
+        "A design-panel summary (must run when N>1)",
+        "Per-diagram panel summaries"
+      ],
+      "expected_to_exclude": [
+        "A single 20+ node diagram trying to cover everything (the canonical noun-inventory failure for this archetype)",
+        "Hard failure paths drawn as a peer of the happy path within any one diagram",
+        "Mixing the intra-run refinement loop and the cross-run feedback loop in one frame"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "explicit-opt-out",
+      "archetype": "user opts out of the panel critique",
+      "expected_set_size": 1,
+      "prompt": "Quick diagram, no critique — just give me a system diagram for a typical webhook handler: webhook arrives at an API gateway, hits a Lambda that validates the signature, enqueues to SQS, a worker Lambda picks up and writes to DynamoDB.",
+      "expected_to_include": [
+        "Step 0 detecting the opt-out signal ('quick diagram, no critique') and skipping the design-panel",
+        "A plan section",
+        "Mermaid source for the webhook trace",
+        "Step 6 running ONLY the syntax linter (rendering correctness is non-negotiable)",
+        "Panel-summary slot saying something like 'skipped panel critique per user request; syntax linter ran'"
+      ],
+      "expected_to_exclude": [
+        "Two parallel panel critique subagents (the user opted out)",
+        "A panel summary listing the four panelists' verdicts",
+        "Bounded revision (no panel means no revision-worthy issues to act on)"
       ]
     }
   ]

@@ -2,6 +2,8 @@
 
 A worked example of the skill applied to a Keras-based two-tower deep-learning recommendation system. Offline training writes a model + preprocessor + item-embedding artifacts; online serving loads them and answers `recommend(user_features, top_k)` calls via a user-tower forward pass plus ANN search (FAISS or sklearn fallback) over the precomputed item embeddings.
 
+**Design summary (step 0):** N=1, single-diagram set. Step 0 considered a 2-diagram set (offline training as a lifecycle sibling) but settled on N=1 because the offline pipeline appears here only as an artifact-write source, not in detail — the offline subgraph has 2 nodes and the artifact handoff is the load-bearing structural boundary. A 2-diagram split would add a 6-8 node training pipeline diagram on the side, which is the right call *if* the user is asking about training; for the canonical "how does serving work" request, single-diagram with the handoff visible is more legible. No design-panel critique runs for N=1. The user can request a "training pipeline" sibling as a follow-up.
+
 The diagram exercises the **request-trace-trust-bounds** archetype with the Platform / SRE engineer SME persona. Step 6 revised the original peer-positioned `ARTIFACTS` subgraph to fold inside `SERVING` as "loaded at construction" inputs, which makes the actual two-surface (offline / online) lifecycle axis visible — artifacts are the handoff *between* surfaces, not a third surface of their own.
 
 ## Plan

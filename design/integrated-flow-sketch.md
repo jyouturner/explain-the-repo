@@ -97,12 +97,21 @@ Latency adds the panel critique and the linter (both small JSON outputs; all thr
 - **A slash command.** Phase C makes `/refine` largely redundant — the default flow already does what `/refine` would.
 - **A new file format or storage of panel reports.** The summary is inline prose; the JSON is ephemeral and only surfaced on request.
 
-## Open questions before we'd actually edit `SKILL.md`
+## Open questions (resolved 2026-04-30)
 
-1. **Should `cross-cutting-as-peer` be revision-worthy or borderline?** Stage 1 saw both real catches and a false positive. With the post-fix-1 rubric, false positives should drop, but we don't have N runs against the new rubric to confirm.
-2. **Is the "spawn a subagent" requirement load-bearing?** Could the skill run the panel in its own context to save the overhead? Probably not — same-context grading was the bias I flagged early on, and we have no measurement that says it's safe.
-3. **Should there be an env/setting flag to opt out?** A power user who knows what they want from a single shot shouldn't have to pay 2–3× tokens. But that's a feature flag and adds surface area.
-4. **What does `iteration-mode-redraw` do under phase C?** The user shows an existing diagram and asks for a redraw. Does the panel run on the *new* diagram, the *original*, or both? Probably the new one only, but worth thinking about.
+All four open questions originally listed for phase C are now resolved. Captured here for posterity, with the resolution noted.
+
+1. **Should `cross-cutting-as-peer` be revision-worthy or borderline?** Resolved: revision-worthy. Stage 1 fix-1 tightened the rubric so false positives on properly-drawn sinks (single sink + dotted incoming arrows) no longer fire. Six-run validation showed the post-fix rubric was net positive.
+2. **Is the "spawn a subagent" requirement load-bearing?** Resolved: yes, keep the subagent. User confirmed during phase-C iteration. The marginal cost of a subagent invocation is small relative to the bias risk of self-grading; stays as the default mechanism.
+3. **Should there be an env/setting flag to opt out?** Resolved: no flag. Instead, the skill respects user signals in the prompt (phrases like "quick diagram", "no panel", "fast", "skip the design phase") and drops to N=1 with no design-panel and no diagram-panel — but the syntax linter always runs since rendering correctness is non-negotiable. Documented in `SKILL.md` step 0 and step 6.
+4. **What does `iteration-mode-redraw` do under phase C?** Resolved: step 5 now sends the redraw decision back to step 0, not step 1. The original sprawling diagram is often a single-diagram-overreach symptom; the design pass evaluates whether the redraw should be a multi-diagram set. Documented in `SKILL.md` step 5.
+
+Two newer questions (introduced by post-ship adjustments) are also now resolved:
+
+5. **Archetype tie-break when the user provides `unknown` and the two parallel runs classify differently.** Resolved: prefer the run whose Domain SME persona surfaced concrete domain-specific issues; if both SMEs were silent or flagged similar issues, prefer the first run. Documented in `SKILL.md` step 6.
+6. **Revise = regenerate vs edit-in-place.** Resolved: regenerate from step 2's planning step with the panel issues injected as additional constraints in the plan's "Out of scope" list and step 3's mapping notes. Editing the prior Mermaid source in place is forbidden — calibration showed it layers revisions on top of structural mistakes. Documented in `SKILL.md` step 6.
+
+The only remaining empirical question is **how the "is this complex enough to need siblings?" decision rule performs in real use**, which can only be answered through real-world traffic. That's not a question a design doc can answer.
 
 ## Calibration findings (2026-04-29)
 
