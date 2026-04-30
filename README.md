@@ -139,21 +139,21 @@ With the skill installed, Claude should run a doc design pass first (proposing 3
 
 The inner diagram procedure runs without the doc-level wrapper. Output: a single-diagram set with a plan, Mermaid source, notes, and a panel summary.
 
-If either fails to behave as described, [open an issue](https://github.com/jyouturner/system-diagram-in-mermaid/issues) — that's exactly the kind of feedback this project needs.
+If either fails to behave as described, [open an issue](https://github.com/jyouturner/explain-the-repo/issues) — that's exactly the kind of feedback this project needs.
 
 ## Install
 
 User-level (available across all projects):
 
 ```bash
-git clone https://github.com/jyouturner/system-diagram-in-mermaid.git \
+git clone https://github.com/jyouturner/explain-the-repo.git \
   ~/.claude/skills/explain-the-repo
 ```
 
 Project-level (vendored into a single repo):
 
 ```bash
-git clone https://github.com/jyouturner/system-diagram-in-mermaid.git \
+git clone https://github.com/jyouturner/explain-the-repo.git \
   .claude/skills/explain-the-repo
 ```
 
@@ -163,8 +163,6 @@ To verify it's installed:
 ```bash
 ls ~/.claude/skills/explain-the-repo/SKILL.md
 ```
-
-(The repo currently lives at the URL `system-diagram-in-mermaid` for historical reasons; the *skill* is `explain-the-repo`. The git remote rename is a follow-up.)
 
 ## Files
 

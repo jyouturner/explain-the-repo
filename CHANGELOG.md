@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.4.0] — 2026-04-30
 
 ### Renamed
-- **Skill: `system_diagram_in_mermaid` → `explain_the_repo`.** The work of v0.1–v0.3 made clear that users asking for a system diagram of a repo were actually asking for an *architecture document* containing diagrams, not diagrams alone. The diagram-set work, the multi-section format, the design-pass / panel-critique structure — all of it is shaped by the architecture-doc use case. v0.4 commits to that positioning. The repo URL stays at `system-diagram-in-mermaid` for now (rename is a follow-up).
+- **Skill: `system_diagram_in_mermaid` → `explain_the_repo`.** The work of v0.1–v0.3 made clear that users asking for a system diagram of a repo were actually asking for an *architecture document* containing diagrams, not diagrams alone. The diagram-set work, the multi-section format, the design-pass / panel-critique structure — all of it is shaped by the architecture-doc use case. v0.4 commits to that positioning. GitHub repo also renamed to `explain-the-repo` after the v0.4.0 commit.
 - **Skill description updated** to trigger on requests like "explain this repo," "architecture of [project]," "document this service," "onboard a new engineer to [codebase]" — in addition to the diagram-only triggers from earlier versions.
 
 ### Added
