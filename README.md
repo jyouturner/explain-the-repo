@@ -61,6 +61,7 @@ Two-level procedure. Outer loop designs the doc (which sections, what's out of s
 - [`examples/walkthrough.md`](examples/walkthrough.md) — step-by-step walk of the inner diagram procedure on a multi-tenant RAG service.
 - [`evals/evals.json`](evals/evals.json) — test prompts.
 - [`design/`](design/) — design rationale (panel-critique loop, integrated flow, calibration findings).
+- [`docs/skill-building/`](docs/skill-building/) — three documents extracting the skill-building lessons from this project: a one-page operational checklist, a seven-insights essay, and a commit-by-commit tutorial. Useful if you're building skills of your own.
 - [`CHANGELOG.md`](CHANGELOG.md) — version history including the v0.4 rename from `system-diagram-in-mermaid`.
 
 ## Contributing
