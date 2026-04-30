@@ -149,6 +149,53 @@ Step 6 now spawns a third subagent in parallel with the two panel critiques: a s
 
 **What this does NOT replace.** The patterns reference still has authority for diagram-authoring guidance during generation — the linter is the post-hoc safety net, not the primary teacher.
 
+### Multi-diagram sets and the design phase (adopted 2026-04-29)
+
+Phase C originally scoped the skill to "one diagram, well drawn." User feedback after the first calibration runs surfaced a real limitation: complex systems (multi-cadence agents, multi-loop pipelines, components with load-bearing internal structure) sprawl when forced into a single trace, and the panel correctly flags the sprawl but the reviser can't actually fix it without losing structural detail. The autoresearch case ended at 21 nodes because that's what the system honestly needs in one frame — collapsing it bury what matters.
+
+The complete fix is to generate a **diagram set** when the system warrants one, not a single diagram. Step 0 of `SKILL.md` is the design pass that decides set composition; `references/design-pass.md` contains the sibling rules; `references/design-panel-prompt.md` is the set-level critique that runs when N > 1.
+
+**Sibling rules** (full version in `references/design-pass.md`):
+
+- **Cadence sibling:** sync vs async vs scheduled flows that don't share a time scale.
+- **Failure sibling:** failure / recovery path structurally distinct from happy path.
+- **Zoom sibling:** a load-bearing component on the headline trace gets its own diagram exploding it.
+- **Topology sibling:** state stores / deployment topology that the trace doesn't naturally show.
+- **Lifecycle sibling:** distinct build-time and run-time concerns (training + serving).
+
+Default set size is 1. Cap at 5. Most systems land at 1–3; agent / multi-cadence systems land at 4–5.
+
+**Design-panel rubric** covers composition-level failures:
+
+- `missing-aspect` (revision-worthy)
+- `wrong-cadence-split` (revision-worthy)
+- `unanchored-zoom` (revision-worthy)
+- `redundant-siblings` (borderline; surface)
+- `over-fanout` / `under-fanout` (borderline; surface)
+- `headline-unclear` (borderline; surface)
+
+The design-panel runs once per request on the *set design*, before any per-diagram generation. Skipped entirely for single-diagram sets.
+
+**Cost.** Single-diagram sets (most common case for simple systems) pay the same 3–5× as before. Multi-diagram sets pay roughly N× that. Updated cost table:
+
+| Path                                            | Calls       | Notes                                                                  |
+| ----------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
+| Today (no panel)                                 | 1           | Generator only.                                                        |
+| Phase C, single-diagram set, panel-clean         | 4           | Generator + 2 panel + 1 linter.                                        |
+| Phase C, single-diagram set, panel revises       | 5           | Above + one revision.                                                  |
+| Phase C, N-diagram set (N>1), all clean          | 1 + N × 4   | 1 design-panel + N × (generator + 2 panel + 1 linter).                 |
+| Phase C, N-diagram set (N>1), all revise         | 1 + N × 5   | Above + N × revision.                                                  |
+
+For N=4 worst case: 21 calls. Wall-time doesn't scale at the same rate (per-diagram subagents run in parallel within each diagram; diagrams themselves can be generated in parallel if independent), but tokens do. The trade-off accepted: a coherent multi-diagram set is worth more than a single sprawling diagram, even at this cost. The user gets one chance to dismiss the design pass at step 0 ("just give me one diagram") if they want the cheap path.
+
+**What's NOT in this expansion.** The skill is still single-level (C4 "container" zoom, roughly). The design phase doesn't address true multi-level diagramming (system context → containers → components → code). Tools like Structurizr / C4-PlantUML are still the right answer for that.
+
+**Remaining limitations to validate against real use:**
+
+1. The "is this complex enough to need siblings?" decision rule is heuristic. The first wave of multi-diagram outputs in real use will show whether step 0 over-fans-out or under-fans-out for typical user requests.
+2. Multi-diagram output is verbose. The `## Diagram N — <title>` section pattern may need tuning if users find it too long.
+3. The `examples/real-repos/autoresearch.md` is currently single-diagram; it's a candidate for regeneration as a multi-diagram example to demonstrate what the new flow produces. Not blocking — the framework ships independently.
+
 ## Suggested next step
 
 With the filter table corrected, phase C is a defensible default-on change. Two ways to land it:

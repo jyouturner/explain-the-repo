@@ -34,7 +34,28 @@ The discriminator is whether the diagram needs to show **components of a system 
 
 ## The procedure
 
-Follow these six steps in order. Don't skip the planning steps and jump to Mermaid — that's how you get the failures this skill exists to prevent. Step 6 runs a panel critique on the diagram before returning to the user; it's a backstop, not a replacement for the procedure.
+The procedure has two phases. **Step 0** is a single design pass that decides what *set* of diagrams the system needs (most often 1, sometimes up to 5). **Steps 1–6** then run *per diagram in the set*.
+
+Don't skip the planning steps and jump to Mermaid — that's how you get the failures this skill exists to prevent. Step 6 runs a panel critique + syntax linter on each diagram; step 0 has its own design-panel for sets larger than 1.
+
+### 0. Design pass — pick the diagram set
+
+Before drawing anything, decide the set composition. Read `references/design-pass.md` in full — it contains the sibling rules (when to add a cadence sibling, zoom sibling, topology sibling, lifecycle sibling, failure sibling), the cap rules (≤ 5 diagrams; sub-3-node siblings go in NOTES instead), and the format for the set design.
+
+The default set size is 1. Add siblings only when the system has properties that genuinely don't fit one frame.
+
+Produce the set design as a short prose block following the format in `references/design-pass.md`. Show it to the user and ask for a quick sanity check before any drawing begins. If the user dismisses the design pass ("just give me one diagram"), respect that — drop to N=1 and use the headline only.
+
+If N > 1, run the design-panel critique once on the set design itself: spawn a subagent that reads `references/design-panel-prompt.md` and returns a JSON report on the set composition. Apply revision-worthy issues (`missing-aspect`, `wrong-cadence-split`, `unanchored-zoom`) by adjusting the set design before generation; surface the rest in the design summary you return to the user.
+
+If N = 1, skip the design-panel — the existing per-diagram panel critique (step 6) covers single-diagram cases.
+
+After step 0 you have:
+- A set of N diagrams (1 ≤ N ≤ 5), each with archetype, scope, and concrete entry point.
+- Named relationships between diagrams in the set.
+- A list of aspects deliberately excluded.
+
+For each diagram in the set, run steps 1–6 below. Step 1's archetype is now fixed by step 0; step 1 confirms the specific job within that archetype.
 
 ### 1. Pick the diagram's job
 
@@ -45,9 +66,9 @@ Before drawing anything, decide which of these the diagram is for:
 - **Failure / recovery path** — show what happens when something goes wrong. Always a separate diagram from the happy-path trace.
 - **Cross-cadence loop** — batch processes, retraining loops, audit aggregation. Different time-scale than the request flow. Always a separate diagram.
 
-If the user's request implies more than one of these (it usually does), draw the trace first and offer the others as follow-ups. Cramming multiple cadences into one diagram is the single most common failure mode.
+Step 0's set design has already assigned this diagram an archetype. Step 1 confirms the specific instance of that archetype: *which* request, *which* failure path, *which* cadence — the concrete entry point that grounds the rest of the planning. If the diagram's role within the set is unclear at this point, return to step 0 and clarify.
 
-State the choice in one line at the top of your response so the user can correct course before you commit to pixels: *"I'll draw this as a request trace — one user query flowing from the API gateway through the agent runtime to the audit log and back. The cross-run feedback loop and the failure path are different diagrams; I'll mention them at the end."*
+State the specific job in one line at the top of the diagram's section so the user can correct course before you commit to pixels: *"This is the request-trace headline of the set — one user query flowing from the API gateway through the agent runtime back to the gateway. The cross-run feedback loop and the failure path are diagrams 3 and 4 in the set."*
 
 ### 2. Plan the trace in plain text first
 
@@ -139,6 +160,10 @@ The full design rationale, the calibration findings that produced this filter, a
 
 ## Output format
 
+The shape depends on the set size from step 0.
+
+### Single-diagram set (N = 1)
+
 Return four things:
 
 1. **The plan** (from step 2) as a short prose block, so the user can verify the trace and scope.
@@ -146,11 +171,24 @@ Return four things:
 3. **A brief note** about (a) what's out of scope and where it would go in a sibling diagram, (b) any architectural choices that are surfaced visually, and (c) the renderer config the diagram assumes.
 4. **A panel summary**, at most three sentences:
    - If panel-clean: name the four panelists and that all returned `ship`. Example: *"Panel clean — Trace Reader, Visual Encoding Critic, Scope Steward, and the SME (Backend / API engineer) all returned ship."*
-   - If revised: name the issues addressed (anchor + one-line description), then name the borderline issues surfaced (anchor + one-line description), if any. Example: *"Panel revised one issue (`out-of-scope-sprawl` — the offline pipeline was drawn despite being declared out of scope). Two borderline issues surfaced: `inconsistent-edge-style` on the FAISS/sklearn branch, and `noun-inventory` at 14 nodes (soft band)."*
+   - If revised: name the issues addressed (anchor + one-line description), then name the borderline issues surfaced. Example: *"Panel revised one issue (`out-of-scope-sprawl` — the offline pipeline was drawn despite being declared out of scope). Two borderline issues surfaced: `inconsistent-edge-style` on the FAISS/sklearn branch, and `noun-inventory` at 14 nodes (soft band)."*
 
-   Do not surface the full panel JSON unless the user asks for it. Verbose surfacing defeats the point of the borderline classification.
+   Do not surface the full panel JSON unless the user asks for it.
 
-If the user asks for the diagram to render inline (e.g. in a Claude artifact, in chat, in a doc with live Mermaid support), provide an HTML wrapper that loads Mermaid v11 from esm.sh, configures elk, and renders the source. Pattern is in `references/mermaid-patterns.md` under "Standalone HTML render."
+### Multi-diagram set (N > 1)
+
+Return:
+
+1. **A design summary** (from step 0). One paragraph naming the system, the set composition (each diagram's role), the relationships between diagrams, and what's deliberately out of the set. Example: *"Four-diagram set for autoresearch: (1) request trace as the headline, (2) Phase-2 zoom that explodes the orchestrated-vs-single-call pipeline within (1), (3) cross-run feedback cadence sibling, (4) state-stores topology answering 'what persists between runs' that the traces don't show. Out of set: dashboard internals, parallel-specialist mode, failure paths."*
+2. **A design-panel summary**, one or two sentences. If the design-panel returned ship, say so. If it revised, name the issue addressed. Example: *"Design-panel revised one issue (`missing-aspect`: the cross-run feedback loop was absent from the initial set; added as diagram 3)."*
+3. **For each diagram in the set**, in the order they appear in the design summary, a section with the same four pieces as the single-diagram case (plan, Mermaid source, notes, panel summary). Use a `## Diagram N — <title>` header.
+4. **A closing note** if any aspects from the set's "out of scope" list are worth flagging to the user as candidates for follow-up diagrams.
+
+A multi-diagram response is longer than a single-diagram response. That's the point — the user asked about a complex system and is getting an honest set, not a sprawling single diagram trying to be everything.
+
+### Inline rendering
+
+If the user asks for the diagram to render inline (e.g. in a Claude artifact, in chat, in a doc with live Mermaid support), provide an HTML wrapper per diagram that loads Mermaid v11 from esm.sh, configures elk, and renders the source. Pattern is in `references/mermaid-patterns.md` under "Standalone HTML render."
 
 ## Common failure modes to avoid
 
@@ -169,3 +207,5 @@ Even with this procedure, watch for these tendencies:
 - `references/mermaid-patterns.md` — specific Mermaid idioms: subgraph styling, classDef patterns, linkStyle indexing, elk config, and a standalone HTML render template. Read this when writing the Mermaid source if you're unsure about a specific construct.
 - `references/panel-prompt.md` — the four-panelist critique procedure used by step 6. The skill spawns a subagent that loads this file and applies the panel to the diagram before returning to the user.
 - `references/syntax-lint-prompt.md` — the parser-footgun checklist used by step 6's syntax linter. Spawned alongside the panel critiques to catch unquoted brackets, `@`, reserved keywords, and other Mermaid v11 parse errors before they reach GitHub.
+- `references/design-pass.md` — sibling rules and decision logic for step 0 (picking the diagram set). Read this before deciding whether the user's request needs one diagram or several siblings.
+- `references/design-panel-prompt.md` — the set-level critique used by step 0 when the set has more than one diagram. The skill spawns a subagent that loads this file and reviews the set composition before any per-diagram generation.
