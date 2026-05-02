@@ -59,6 +59,7 @@ Two-level procedure. Outer loop designs the doc (which sections, what's out of s
 - [`references/`](references/) — the procedure files (doc design pass, inner diagram procedure, panel-critique prompts, syntax linter, Mermaid patterns and footguns).
 - [`examples/real-repos/`](examples/real-repos/) — the cold-run worked examples linked above.
 - [`examples/walkthrough.md`](examples/walkthrough.md) — step-by-step walk of the inner diagram procedure on a multi-tenant RAG service.
+- [`examples/v0.5-walkthrough.md`](examples/v0.5-walkthrough.md) — end-to-end walk of the doc-level procedure (Phase 0 → E) on a real codebase. Shows the v0.5 mechanisms in action: in-session-author detection, existing-docs scan, visual-vocabulary lock-in, token-budget output, vocabulary conformance during diagram generation, the reader test with a real subagent JSON output, and the generation-notes block.
 - [`evals/evals.json`](evals/evals.json) — test prompts.
 - [`design/`](design/) — design rationale (panel-critique loop, integrated flow, calibration findings).
 - [`docs/skill-building/`](docs/skill-building/) — three documents extracting the skill-building lessons from this project: a one-page operational checklist, a seven-insights essay, and a commit-by-commit tutorial. Useful if you're building skills of your own.

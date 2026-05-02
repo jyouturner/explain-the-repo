@@ -6,6 +6,8 @@ This walkthrough exercises a **single-diagram set (N=1)** within the inner proce
 
 In the original skill (before the `explain_the_repo` rename), this walkthrough was the canonical walk-through. It still holds for the inner diagram procedure unchanged; the outer doc-level wrapping is what's new.
 
+For an end-to-end walk of the **outer doc-level procedure** including the v0.5 mechanisms (in-session-author detection, existing-docs scan, visual-vocabulary lock-in, reader test, generation-notes block), see [`v0.5-walkthrough.md`](v0.5-walkthrough.md). That walkthrough exercises Phase 0 through Phase E on a real codebase; this one exercises the inner procedure (steps 0 through 6) in isolation.
+
 ## The user prompt
 
 > *"Draw a system diagram for a request flowing through a multi-tenant retrieval-augmented generation service. The platform has an API gateway that does PII redaction, a shared orchestrator with plan/execute/verify/adjust stages, an LLM router with cost tiers, retriever adapters that hit a tenant-scoped vector store, an eval harness, a feedback pipeline that updates a skill registry, and a per-tenant hash-chained audit log."*
