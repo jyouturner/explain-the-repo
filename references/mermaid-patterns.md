@@ -27,9 +27,38 @@ mermaid.initialize({
 });
 ```
 
-Mermaid v11 from `https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs` works in modern environments. For GitHub READMEs, you cannot configure elk — GitHub uses dagre. Warn the user; the diagram will still render but routing will be worse.
+Mermaid v11 from `https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs` works in modern environments. For GitHub READMEs, you cannot configure elk — GitHub uses dagre. Warn the user; the diagram will still render but routing will be worse. See § "Publishing to GitHub README" below for specific dagre-survival constraints.
 
 Direction: `flowchart LR` for request traces (left-to-right reads as time). `flowchart TB` for hierarchies. Pick one per diagram.
+
+## Publishing to GitHub README
+
+GitHub renders Mermaid with dagre, not elk. Diagrams that look great in [Mermaid Live](https://mermaid.live) with elk enabled can look genuinely bad on GitHub — overlapping nodes, edges crossing through labels, hexagons crammed against subgraph borders. Apply these constraints before shipping a diagram to a GitHub README, repo doc, or PR description.
+
+The constraints aren't optional polish; they're the difference between "renders" and "renders well":
+
+1. **Prefer simple shapes.** Stick to `[Box]`, `[(Cylinder)]`, and `(["Stadium"])`. Avoid `{{Hexagon}}` (dagre routes around them poorly and they often get clipped against subgraph borders), `[/Parallelogram/]` (parser-touchy with quoted labels), and `>Asymmetric]` (rarely renders cleanly). If the locked visual vocabulary calls for a hexagon, consider whether a labeled box would carry the same meaning.
+
+2. **Cap subgraphs at 2–3 per diagram.** Each subgraph adds a constraint to dagre's solver; routing degrades fast above 3. Four subgraphs in a `flowchart LR` is the canonical "edges crossing through subgraph titles" failure on GitHub.
+
+3. **Avoid `direction` overrides inside subgraphs.** Mixing `flowchart LR` with internal `direction TB` is well-supported by elk and produces crossed edges in dagre. Pick one direction at the diagram level and stick with it.
+
+4. **Keep node labels under 3 lines.** `<br/>` heavy labels confuse dagre's node-sizing — the nodes get sized for the widest line and routing assumes that width, but the rendered layout doesn't always match. Two `<br/>` per label is the practical limit on GitHub.
+
+5. **Edge labels under ~15 characters.** Dagre doesn't reflow long edge labels; they overlap nodes and adjacent labels. If you need a long label, abbreviate it and add a NOTE below the diagram, or split into two edges.
+
+6. **6–12 nodes is the sweet spot.** Smaller diagrams compose better in dagre. Above ~15 nodes, the layout gets cramped on the typical GitHub-rendered width. Use sibling diagrams (see `references/diagram-set-design-pass.md`) instead of one large diagram.
+
+7. **Test the actual GitHub render before committing.** Push to a draft PR or use a Markdown previewer that uses dagre. **Do not test only in Mermaid Live with elk** — that's a different renderer and will lie about the GitHub experience.
+
+8. **For diagrams that must look good in both elk and dagre**, the intersection is "small and flat": no nested subgraphs, simple shapes, 6–12 nodes, short labels. If a diagram absolutely requires a layout that only elk handles well — 4+ subgraphs, heavy hexagonal transformation nodes, deeply nested groupings — declare it explicitly and ask the user where it'll be rendered. If the answer is GitHub, redesign for dagre or accept the suboptimal render with a note.
+
+Two anti-patterns to recognize when reviewing a diagram bound for GitHub:
+
+- **Multi-line edge labels.** `A -->|"part 1<br/>part 2"| B`. Renders fine in elk; in dagre the `<br/>` doesn't always create a line break in edge labels, so the label runs over the edge or off-screen.
+- **Hexagon clusters.** Two or more `{{...}}` nodes adjacent to each other in a subgraph. Dagre tries to route the hexagons' edges around their angled corners and produces visible overlap.
+
+The cleanest diagrams on GitHub are flat flowcharts with 8 or so nodes, 1–2 subgraphs, basic shapes, and short edge labels. If you find yourself reaching for hexagons or 4 subgraphs, that's a sign the diagram is doing too much — split into siblings.
 
 ## Subgraphs for semantic grouping
 

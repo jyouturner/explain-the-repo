@@ -57,12 +57,13 @@ State the specific job in one line at the top of the diagram's section so the us
 
 ### 2. Plan the trace in plain text first
 
-Before writing Mermaid, write a short plain-text outline. The outline has four parts:
+Before writing Mermaid, write a short plain-text outline. The outline has five parts:
 
 1. **Concrete entry point.** Pick a specific, named request — not "a user request" but something concrete like "user submits: 'summarize this week's incidents'" or "checkout: cart of 3 items, signed-in customer, default address." Specificity forces real decisions about what gets drawn.
 2. **The path.** List the components the trace touches, in order, as a numbered list. If a component isn't on the path, it doesn't go on the diagram.
 3. **The semantic axis.** State what color will encode. Pick exactly one: trust boundary, control plane vs data plane, sync vs async, internal vs external, or category (e.g. "infra / app / data"). Two axes confuse the reader; zero axes makes color decorative.
-4. **Out of scope.** Name the things you're deliberately not drawing: failure paths, batch jobs, observability, etc. This is the fence that keeps the diagram from sprawling.
+4. **Vocabulary conformance** (when invoked from the doc skill). If the doc skill passed in a locked visual vocabulary (see `references/doc-design-pass.md` § "Visual vocabulary lock-in"), declare which colors and shapes from it this diagram will use, and confirm none of the choices conflict with the vocabulary's stable axis assignments. If you need a color or shape not in the locked vocabulary, surface it now — either justify the addition (and update the vocabulary) or pick from what's already locked. When invoked standalone (not from the doc skill), there is no locked vocabulary; this part is skipped.
+5. **Out of scope.** Name the things you're deliberately not drawing: failure paths, batch jobs, observability, etc. This is the fence that keeps the diagram from sprawling.
 
 Show this outline to the user and ask for a quick sanity check before drawing.
 
@@ -92,6 +93,8 @@ mermaid.initialize({
 ```
 
 If the user is rendering in an environment that defaults to dagre (GitHub, plain Markdown previews), warn them and either suggest Mermaid Live Editor with elk enabled, or accept the dagre rendering with a note that routing will be slightly worse.
+
+**If the diagram will live in a GitHub README or any other dagre-rendered context, also see `references/mermaid-patterns.md` § "Publishing to GitHub README" for the additional constraints dagre's layout imposes.** Hexagons, 4+ subgraphs, multi-line edge labels, and 15+ nodes are common dagre failure cases — design around them up front rather than discovering them after the diagram ships.
 
 The direction matters. `flowchart LR` (left-to-right) reads naturally for request traces. `flowchart TB` (top-to-bottom) is for hierarchies and stacks. Don't mix — pick one and stick to it.
 

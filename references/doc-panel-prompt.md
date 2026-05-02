@@ -37,6 +37,8 @@ For each anchor, decide whether it fires. If it fires, return an issue with the 
 - `missing-section` — the system has a major aspect that no section covers. Common cases: system has nontrivial persistent state but no state-and-persistence section; system has a clear build-time/run-time split but no lifecycle section; system has heavy domain jargon but no glossary; doc has no `where-to-start` section (which is non-optional).
 - `over-sectioned` — the doc has more than 8 sections AND at least one section is below the "3 paragraphs of unique content" threshold. Recommend folding or cutting.
 - `under-sectioned` — the doc has 3 sections and the system clearly has multi-component complexity, persistent state, or lifecycle distinctions that aren't covered.
+- `eval-surface-buried` — the repo has an obvious eval / benchmark / golden-set surface (e.g. `data/eval/golden.jsonl`, `evals/`, `benchmarks/`, an `eval.py` entry point, or a metric prominently named in the headline) but the doc has no Test-and-eval-surface section and the eval surface is not adequately covered inside another section. A stranger trying to verify a change after editing has nowhere to land.
+- `lifecycle-state-overlap-not-merged` — the doc has both a Lifecycle section and a State-and-persistence section, and the two cover ≥ 70% the same content (same files cited, same persistence stores discussed, same boundaries drawn). The system probably needs a single merged "Lifecycle and persistence" section per the merge rule in `references/doc-design-pass.md`. Recommend merge.
 
 **Composition anchors (apply to plan and assembled doc):**
 
@@ -49,6 +51,8 @@ For each anchor, decide whether it fires. If it fires, return an issue with the 
 - `unanchored-pointers` — the doc says "see the X service" or "the Y handler" but X / Y is never defined or pointed at. Quote the sentence with the dangling reference.
 - `not-grounded` — the prose makes specific claims (about call structure, file paths, function names, persistence) that aren't backed by file references in the doc. Quote the unsourced claim.
 - `where-to-start-missing-or-thin` — the `Where to start reading` section is absent OR has fewer than 3 file pointers. This section is non-optional and load-bearing.
+- `inconsistent-vocabulary` — a color or shape means different things in different diagrams within the doc, OR a diagram introduces a color or shape that's not in the doc plan's locked visual vocabulary. Concrete forms: yellow means "persisted storage" in diagram 1 and "offline cadence" in diagram 3; cylinder means storage in diagram 1 and never appears in diagram 4 even though there's storage in that diagram; a diagram uses a hexagon when the locked vocabulary lists only boxes, cylinders, and stadiums. Quote the inconsistency. Recommend re-locking the vocabulary in the doc plan and regenerating the off-vocabulary diagrams.
+- `component-summary-template-violation` — the doc has a Component summaries section, and one or more component subsections lack one of the required template lines: a responsibility paragraph, a `**Surface**:` line, a `**Boundary**:` line, or a `**Key files**:` line, AND the section header doesn't acknowledge the deviation. The Boundary line is the highest-leverage of the four; flag specifically when it's missing. Quote the offending subsection's heading.
 
 **Anchoring anchors (apply to plan and assembled doc):**
 
@@ -102,19 +106,23 @@ Field semantics:
 
 The skill applies the panel's verdict using this filter:
 
-| Anchor                            | Bucket          |
-| --------------------------------- | --------------- |
-| `missing-section`                 | revision-worthy |
-| `wrong-section-order`             | revision-worthy |
-| `prose-diagram-mismatch`          | revision-worthy |
-| `unanchored-pointers`             | revision-worthy |
-| `not-grounded`                    | revision-worthy |
-| `where-to-start-missing-or-thin`  | revision-worthy |
-| `no-out-of-scope-section`         | revision-worthy |
-| `headline-overreaches`            | revision-worthy |
-| `over-sectioned`                  | borderline      |
-| `under-sectioned`                 | borderline      |
-| `redundant-sections`              | borderline      |
+| Anchor                                    | Bucket          |
+| ----------------------------------------- | --------------- |
+| `missing-section`                         | revision-worthy |
+| `wrong-section-order`                     | revision-worthy |
+| `prose-diagram-mismatch`                  | revision-worthy |
+| `unanchored-pointers`                     | revision-worthy |
+| `not-grounded`                            | revision-worthy |
+| `where-to-start-missing-or-thin`          | revision-worthy |
+| `no-out-of-scope-section`                 | revision-worthy |
+| `headline-overreaches`                    | revision-worthy |
+| `inconsistent-vocabulary`                 | revision-worthy |
+| `component-summary-template-violation`    | revision-worthy |
+| `eval-surface-buried`                     | revision-worthy |
+| `lifecycle-state-overlap-not-merged`      | revision-worthy |
+| `over-sectioned`                          | borderline      |
+| `under-sectioned`                         | borderline      |
+| `redundant-sections`                      | borderline      |
 
 Coverage and coherence anchors are revision-worthy because the failure mode is "doc is incomplete or contradictory." Sectioning judgment calls are borderline — surface to the user, who knows what they want better than the reviser does.
 
