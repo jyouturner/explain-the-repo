@@ -4,9 +4,9 @@ A [Claude Code skill](https://docs.claude.com/en/docs/claude-code/skills) that p
 
 Status: experimental, v0.4.
 
-## What you get
+## Examples
 
-A single markdown file you can save as `docs/architecture.md`. Real outputs from running the skill cold on four codebases:
+Real outputs from running the skill cold on four codebases:
 
 - [`autoresearch.md`](examples/real-repos/autoresearch.md) — 7 sections, 4 diagrams (AI agent with multi-cadence loops and cross-run state).
 - [`enterprise.md`](examples/real-repos/enterprise.md) — 7 sections, 4 diagrams (framework with two reference implementations).
